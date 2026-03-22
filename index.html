@@ -61,6 +61,35 @@
         </section>
 
         <section>
+          <h2>Outline</h2>
+          <ul
+            style="
+              font-size: 0.8em;
+              list-style-type: disc;
+              margin-top: 1em;
+              line-height: 1.6;
+            "
+          >
+            <li>Part 1: Background - Why we need colocalisation?</li>
+            <li>Part 2: COLOC workflow</li>
+            <li>
+              Part 3: coloc.susie - When one signal per trait is not enough
+            </li>
+            <li>
+              Part 4: Variant-specific priors - Next steps for colocalisation
+            </li>
+          </ul>
+          <aside class="notes">
+            This is the roadmap for the seminar. I will refer back to this slide
+            at the start of each section. The four parts are meant to build
+            logically on each other, but they can also be consumed separately.
+            If you are already comfortable with the original COLOC workflow, you
+            could skip directly to part 3 or part 4. But I recommend going
+            through everything at least once because the later sections build on
+            the earlier ones.
+          </aside>
+        </section>
+        <section>
           <h2>
             Part 1: BACKGROUND<br />Why we need <strong>Colocalisation</strong>?
           </h2>
@@ -80,7 +109,7 @@
         <section>
           <h3>Do these two traits share a causal variant in this region?</h3>
           <div style="text-align: center; margin-top: 0.2em">
-            <p
+            <!-- <p
               style="
                 font-size: 0.9em;
                 margin-top: 0;
@@ -89,7 +118,7 @@
               "
             >
               GWAS of a trait and eQTL of a gene:
-            </p>
+            </p> -->
             <img
               src="img/region.png"
               alt="Illustration of two association peaks in the same genomic region"
@@ -266,8 +295,7 @@
             convenience. If the region really contains multiple signals for one
             or both traits, then the original model can compress a messy locus
             into a deceptively tidy answer. That problem will come back later
-            when we discuss SuSiE. [Sources] - Giambartolomei et al. 2014. -
-            Official COLOC enumeration tutorial. - Official COLOC.abf reference.
+            when we discuss SuSiE.
           </aside>
         </section>
 
@@ -308,8 +336,8 @@
                   Two <strong>traits</strong>, one
                   <strong>genomic region</strong>.
                 </li>
-                <li>Dense SNP coverage across that region.</li>
-                <li>Common set of SNPs in both studies.</li>
+                <!-- <li>Dense SNP coverage across that region.</li> -->
+                <li>Common set of dense SNPs in both studies.</li>
                 <li>Case-control or Quantitative trait.</li>
                 <li>Recommended inputs: beta + varbeta.</li>
                 <!-- <li>sdY (the standard deviation of the quantitative trait) or p values + MAF + sample size.</li> -->
@@ -345,6 +373,92 @@
             many pipelines quietly sabotage themselves. [Sources] - Official
             COLOC data tutorial. - Official FAQ. - Official COLOC.abf reference.
           </aside>
+        </section>
+
+        <section>
+          <h3>COLOC model</h3>
+          <div style="text-align: left; margin-top: 0.1em; font-size: 0.6em">
+            <p style="margin-bottom: 0.5em"><strong>Posterior probability of H4:</strong></p>
+            $$
+\begin{aligned}
+\text{PPH4} & =P\left(H_4 \mid D\right) \\
+& =\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)+P\left(H_1 \mid D\right)+P\left(H_2 \mid D\right)+P\left(H_3 \mid D\right)+P\left(H_4 \mid D\right)} \\
+& =\frac{\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}{1+\frac{P\left(H_1 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_2 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_3 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}
+\end{aligned}
+            $$
+
+            <p style="margin-top: 0em; margin-bottom: 0.3em"><strong>Bayes factor ratio:</strong></p>
+            $$
+            \frac{P(H_h \mid D)}{P(H_0 \mid D)} = \sum_{S \in S_h} \underbrace{\frac{P(D \mid S)}{P(D \mid S_0)}}_{\color{red}{\text{Bayes Factor (BF)}}} \times \underbrace{\frac{P(S)}{P(S_0)}}_{\color{red}{\text{Prior odds}}}
+            $$
+
+            <!-- <p style="margin-top: 0em; margin-bottom: 0.3em"><strong>Approximate Bayes factor (ABF):</strong></p>
+            $$
+            \text{ABF} = \sqrt{1-r} \times \exp\left[\frac{Z^2}{2} \times r\right]
+            $$ -->
+          </div>
+        </section>
+        </section>
+
+        <section>
+        <h3>Calculation of ABF</h3>
+        <p style="font-size: 0.8em; margin-top: 2px; text-align: left">
+          For the $j^{th}$ SNP, we use Wakefield's method to calculate the Aapproximate Bayes factor (ABF) of association with trait $T$:
+        </p>
+        <div style="text-align: left; margin-top: -0.8pt; font-size: 0.5em">
+          $$
+          \text{ABF}_j^T = \sqrt{1-r} \times \exp\left[\frac{Z_j^2}{2} \times r\right]
+          $$
+        </div>
+          <ul
+          style="
+            font-size: 0.62em;
+            list-style-type: disc;
+            margin-top: 0.1pt;
+            line-height: 1.6;
+          "
+          >
+            <li>
+              <strong>$Z$ (Wald test statistic)</strong>: $Z = \hat{\beta}/\sqrt{V}$.
+            </li>
+            <li>
+              <strong>$r$ (Shrinkage factor)</strong>: $r = \frac{W}{V + W}$. This factor ranges from 0 to 1 and measures
+              the relative contribution of the prior ($W$) versus data
+              likelihood ($V$). As sample size increases, $V \to 0$ and
+              $r \to 1$.
+            </li>
+            <li>
+              <strong>$V$ (Variance of the estimated effect size)</strong>: Also known as $\text{SE}^2$.
+            </li>
+            <li>
+              <strong>$W$ (Prior variance)</strong>: The prior variance of the
+              true effect size. Following default specifications:
+              $W = 0.15^2$ for continuous quantitative traits and
+              $W = 0.2^2$ for case-control studies.
+            </li>
+          </ul>
+          <aside class="notes">
+            The ABF is a critical component of the COLOC framework. It quantifies the evidence for association at each SNP, incorporating both the observed data (through the Z statistic) and prior beliefs about effect sizes (through the shrinkage factor r). The formula is derived from Wakefield's work on asymptotic Bayes factors, which provides a computationally efficient way to approximate the evidence for association without needing to specify a full likelihood model. Understanding how ABF is calculated and what it represents is essential for interpreting COLOC results correctly. [Sources] - Wakefield 2009. - Official COLOC.abf reference.
+          </aside>
+        </section>
+
+        <section>
+        <h3>Calculation of PPH4</h3>
+        <!-- <p style="font-size: 0.8em; margin-top: 5px; text-align: left">
+          The posterior probability for hypothesis H4 (PPH4) is calculated by first computing the Bayes factor ratios for each hypothesis relative to the null hypothesis (H0). The formulas for these ratios are as follows:
+        </p> -->
+        <div style="text-align: left; margin-top: 0.1em; font-size: 0.6em">
+          $$\text{PPH4} = \frac{\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}{1+\frac{P\left(H_1 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_2 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_3 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}$$
+          $$
+            \begin{aligned}
+            <!-- \frac{P(H_0|D)}{P(H_0|D)} & = 1 \\ -->
+            \frac{P(H_1|D)}{P(H_0|D)} & = p_1 \sum_{j=1}^{Q} \text{ABF}_{j}^{1},\quad
+            \frac{P(H_2|D)}{P(H_0|D)} = p_2 \sum_{j=1}^{Q} \text{ABF}_{j}^{2} \\
+            \frac{P(H_3|D)}{P(H_0|D)} & = p_1 p_2 \sum_{j \neq k} \text{ABF}_{j}^{1} \times \text{ABF}_{k}^{2},\quad
+            \frac{P(H_4|D)}{P(H_0|D)} = p_{12} \sum_{j=1}^{Q} \text{ABF}_{j}^{1} \times \text{ABF}_{j}^{2}
+            \end{aligned}
+          $$
+        </div>
         </section>
 
         <section>
@@ -521,6 +635,16 @@
         </section>
 
         <section>
+          <h3>Prior: SNP vs. Region</h3>
+          <div style="text-align: center; margin-top: 0.2em">
+            <img
+              src="img/define_prior.png"
+              alt="Illustration of the difference between SNP-level and region-level priors in COLOC"
+              style="max-width: 90%; height: auto"
+            />
+          </div>
+        </section>
+        <section>
           <h3>Sensitivity analysis of priors</h3>
           <div style="text-align: center; margin-top: 0.2em">
             <img
@@ -597,11 +721,11 @@
 
         <section>
           <h3>Illustration of SuSiE-based COLOC</h3>
-          <div style="text-align: center; margin-top: 0.2em">
+          <div style="text-align: center; margin-top: 0em">
             <img
               src="img/multi_signal.png"
               alt="Illustration of SuSiE-based COLOC"
-              style="max-width: 80%; height: auto"
+              style="max-width: 75%; height: auto"
             />
           </div>
         </section>
@@ -646,7 +770,18 @@
         </section>
 
         <section>
-          <h3>Variant-specific priors in latest COLOC</h3>
+          <h3>Variant-specific priors</h3>
+          <div style="text-align: center; margin-top: 0.2em">
+            <img
+            src="img/coloc_prior.png"
+            alt="Illustration of variant-specific priors in COLOC"
+            style="max-width: 95%; height: auto"
+            />
+          </div>
+        </section>
+        
+        <section>
+          <h3>Variant-specific priors</h3>
           <ul
             style="
               font-size: 0.8em;
@@ -667,8 +802,8 @@
               eQTL-TSS distance priors.
             </li>
             <li>
-              The 2025 paper found <strong>modest but useful</strong> gains,
-              especially with eQTL-TSS distance density priors.
+              The 2025 paper found modest but useful gains,
+              especially with <strong>eQTL-TSS distance density priors</strong>.
             </li>
           </ul>
           <aside class="notes">
@@ -683,17 +818,6 @@
             multiple-signal structure. [Sources] - Pullin and Wallace 2025. -
             Official variant-specific priors tutorial.
           </aside>
-        </section>
-
-        <section>
-          <h3>Use variant-specific priors</h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-              src="img/coloc_prior.png"
-              alt="Illustration of variant-specific priors in COLOC"
-              style="max-width: 95%; height: auto"
-            />
-          </div>
         </section>
 
         <section>
