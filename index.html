@@ -12,10 +12,15 @@
       content="black-translucent"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
 
     <link rel="stylesheet" href="dist/reset.css" />
     <link rel="stylesheet" href="dist/reveal.css" />
-    <link rel="stylesheet" href="dist/theme/league.css" id="theme" />
     <link rel="stylesheet" href="dist/theme/black.css" id="theme" />
     <link rel="stylesheet" href="css/custom.css" />
   </head>
@@ -23,92 +28,87 @@
   <body>
     <div class="reveal">
       <div class="slides">
-        <section>
-          <h2>
-            Colocalisation:<br /><strong
-              >From Association Signals to Shared Causal Variants</strong
-            >
-          </h2>
-          <div
-            style="
-              text-align: center;
-              margin-left: 2rem;
-              margin-right: 2rem;
-              margin-top: 3em;
-            "
-          >
-            <p style="margin: 0; font-size: 0.8em">Wenxin Jiang</p>
-            <p style="margin: 0; font-size: 0.8em">
-              <a href="?print-pdf" style="color: blue; text-decoration: none"
-                >print pdf</a
+        <section class="title-slide">
+          <div class="slide-shell hero-slide">
+            <!-- <p class="eyebrow">Academic Presentation</p> -->
+            <h2>
+              Colocalisation:<br /><strong
+                >From Association Signals to Shared Causal Variants</strong
               >
-            </p>
+            </h2>
+            <p style="margin: 0; font-size: 0.8em; margin-top: 3em">Wenxin Jiang</p>
+            <div class="glass glass-panel author-card hero-meta">
+              <p style="margin: 0; font-size: 0.8em">
+                <a href="?print-pdf" class="accent-link">print pdf version</a>
+              </p>
+            </div>
           </div>
           <aside class="notes">
-            Today I will give a practical introduction to COLOC. The target
-            audience is a genetics audience that already knows GWAS and QTL
-            studies, but is not yet comfortable with the logic and workflow of
-            colocalisation. The seminar has four parts. First, what biological
-            question COLOC is actually trying to answer. Second, the standard
-            COLOC.abf workflow and how to interpret the output. Third, why
-            priors and sensitivity analysis matter. Fourth, what changes when a
-            locus contains multiple signals, including coloc.susie and the newer
-            variant-specific priors in COLOC version 6. My goal is not to turn
-            everyone into package developers in 45 minutes. My goal is that
-            after this session, you can read a COLOC paper without mystical fog
-            and you can start a reasonable analysis pipeline.
+            Today I will give a practical introduction to COLOC. I assume the
+            audience already knows what GWAS and QTL studies are, but may not
+            yet feel comfortable with how colocalisation is framed and
+            interpreted. I will move from the biological question, to the
+            standard COLOC workflow, to why priors matter, and finally to what
+            changes when one signal per trait is not enough. My goal is not to
+            cover every implementation detail. My goal is that by the end of
+            this talk, the logic of COLOC feels intuitive and the workflow feels
+            usable.
           </aside>
         </section>
 
-        <section>
-          <h2>Outline</h2>
-          <ul
-            style="
-              font-size: 0.8em;
-              list-style-type: disc;
-              margin-top: 1em;
-              line-height: 1.6;
-            "
-          >
-            <li>Part 1: Background - Why we need colocalisation?</li>
-            <li>Part 2: COLOC workflow</li>
-            <li>
-              Part 3: coloc.susie - When one signal per trait is not enough
-            </li>
-            <li>
-              Part 4: Variant-specific priors - Next steps for colocalisation
-            </li>
-          </ul>
+        <section class="outline-slide">
+          <div class="slide-shell compact">
+            <h2 class="content-title">Outline</h2>
+            <div class="glass glass-panel">
+              <ul class="list-clean">
+                <li class="fragment fade-up highlight-current-blue">
+                  Part 1: Background - Why we need colocalisation?
+                </li>
+                <li class="fragment fade-up highlight-current-blue">
+                  Part 2: COLOC workflow
+                </li>
+                <li class="fragment fade-up highlight-current-blue">
+                  Part 3: coloc.susie - When one signal per trait is not enough
+                </li>
+                <li class="fragment fade-up highlight-current-blue">
+                  Part 4: Variant-specific priors - Next steps for colocalisation
+                </li>
+              </ul>
+            </div>
+          </div>
           <aside class="notes">
-            This is the roadmap for the seminar. I will refer back to this slide
-            at the start of each section. The four parts are meant to build
-            logically on each other, but they can also be consumed separately.
-            If you are already comfortable with the original COLOC workflow, you
-            could skip directly to part 3 or part 4. But I recommend going
-            through everything at least once because the later sections build on
-            the earlier ones.
+            This is the roadmap. Part 1 explains why overlap alone is not
+            enough. Part 2 introduces the standard COLOC workflow and how to
+            read the output. Part 3 shows why multi-signal loci require
+            coloc.susie. Part 4 ends with variant-specific priors as a practical
+            extension. I will keep coming back to this structure as we move
+            through the talk.
           </aside>
         </section>
-        <section>
-          <h2>
-            Part 1: BACKGROUND<br />Why we need <strong>Colocalisation</strong>?
-          </h2>
+        <section class="part-divider">
+          <div class="slide-shell section-divider">
+            <div class="glass glass-panel">
+              <!-- <p class="eyebrow">Part 1</p> -->
+              <h2>
+                Part 1: BACKGROUND<br />Why we need <strong>Colocalisation</strong>?
+              </h2>
+            </div>
+          </div>
           <aside class="notes">
-            I want to begin with the biological motivation before the software.
-            Post-GWAS interpretation often starts with a familiar temptation: a
-            disease signal and an eQTL signal are near each other, so perhaps
-            the gene is causal. That is a useful intuition, but it is not
-            enough. Nearby peaks can reflect a shared variant, different
-            variants in LD, or a more complex multi-signal locus. COLOC exists
-            because the phrase “these two peaks overlap” is far less informative
-            than it sounds. The next few slides build that distinction
-            carefully.
+            I want to start with the biological motivation rather than the
+            software. In practice, people often see a disease signal and an
+            eQTL signal in the same region and immediately want to connect them
+            mechanistically. That intuition is useful, but it is not yet
+            evidence of a shared causal variant. The next few slides explain why
+            that distinction matters.
           </aside>
         </section>
 
-        <section>
-          <h3>Do these two traits share a causal variant in this region?</h3>
-          <div style="text-align: center; margin-top: 0.2em">
+      <section class="subsection-slide">
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Do these two traits share a causal variant in this region?</h3>
+            <div class="glass media-frame full-media">
             <!-- <p
               style="
                 font-size: 0.9em;
@@ -125,213 +125,198 @@
               style="max-width: 100%; height: auto"
             />
             <p style="font-size: 0.9em; margin-top: 0"></p>
+            </div>
           </div>
           <aside class="notes">
-            This is the core question. It is not about lead SNPs or visual
-            similarity. It is about whether the data support shared causality in
-            the region. That is what COLOC tests. If we can keep that question
-            front and center, we will be in good shape to understand why the
-            method works and how to interpret it. [Sources] - Giambartolomei et
-            al. 2014. - Official COLOC intro tutorial.
+            This is the central question of the whole presentation. We are not
+            asking whether the two plots look similar at a glance. We are asking
+            whether both traits are consistent with the same causal variant in
+            this region. If you keep that question in mind, the rest of the
+            method becomes much easier to understand.
           </aside>
         </section>
 
-        <section>
-          <h3>What colocalisation asks?</h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <ul
-              style="
-                font-size: 0.8em;
-                list-style-type: square;
-                line-height: 1.5;
-              "
-            >
-              <li>Are both traits associated in this region?</li>
-              <li>
-                If yes, are they more consistent with
-                <strong>one shared causal variant</strong> than with
-                <strong>two distinct variants</strong>?
-              </li>
-              <li>
-                How strong is that support after accounting for uncertainty?
-              </li>
-            </ul>
-          </div>
-          <aside class="notes">
-            This is the conceptual hinge of the entire talk. Coloc is not a
-            fancy way to compare lead SNPs. It asks whether the regional
-            association patterns are more consistent with shared causation or
-            distinct causation. That distinction matters because LD can make
-            nearby variants look similar. In practice, the dangerous mistake is
-            to jump from “nearby” to “mechanistically linked.” Coloc gives us a
-            Bayesian framework to compare those explanations explicitly. For a
-            genetics audience, this is worth stating plainly: colocalisation is
-            about the relationship between causal architecture across traits,
-            not about the proximity of top markers. [Sources] - Giambartolomei
-            et al. 2014. - Official COLOC intro tutorial. - Official FAQ.
-          </aside>
-        </section>
-
-        <section>
-          <h3>
-            Why not just look at <strong>lead SNPs</strong> or
-            <strong>fine-mapping</strong> results?
-          </h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <ul
-              style="
-                font-size: 0.8em;
-                list-style-type: square;
-                line-height: 1.5;
-              "
-            >
-              <li>Lead SNPs can differ across traits due to LD and noise.</li>
-              <li>
-                Nearby peaks can reflect shared or distinct causal variants.
-              </li>
-              <li>
-                Fine-mapping methods like SuSiE may not powerful enough to find
-                the exact shared SNP.
-              </li>
-            </ul>
-          </div>
-          <aside class="notes">
-            This slide is a direct response to the common temptation to equate
-            nearby peaks with shared causality. The problem is that LD can make
-            different causal variants look similar, and noise can make the lead
-            SNPs differ even when the causal variant is shared. Coloc provides a
-            principled way to test these explanations against each other. If we
-            skip that step and just look at lead SNPs, we are vulnerable to
-            misinterpretation and false positives. [Sources] - Giambartolomei et
-            al. 2014. - Official COLOC intro tutorial. - Official FAQ.
-          </aside>
-        </section>
-
-        <section>
-          <h3>Where we can use colocalisation?</h3>
-          <img
-            src="img/type.jpg"
-            alt="Illustration of different types of colocalisation analyses"
-            style="max-width: 60%; max-height: 80%"
-          />
-          <aside class="notes">
-            This slide is meant to expand the audience's view of where
-            colocalisation can be applied. It is not limited to GWAS-eQTL
-            comparisons. We can also compare two GWAS, or an xQTL with another
-            xQTL. The key is that we have two traits and a shared genomic
-            region, and we want to test for shared causality. This flexibility
-            is one of the strengths of the COLOC framework. [Sources] - Official
-            COLOC intro tutorial. - Official FAQ.
-          </aside>
-        </section>
-
-        <section>
-          <h2>Part 2: <br /><strong>COLOC</strong> workflow</h2>
-          <aside class="notes">
-            Now we move from the biological question to the standard baseline
-            workflow. If your audience remembers only one operational pipeline
-            from today, this should be it. We start with the original 2014 model
-            and then build upward. [Sources] - Giambartolomei et al. 2014. -
-            Official COLOC enumeration tutorial.
-          </aside>
-        </section>
-
-        <section>
-          <h3>The original COLOC (2014) model</h3>
-          <p style="font-size: 0.8em; margin-top: 5px; text-align: left">
-            Assumption:
-            <strong>at most one causal variant </strong>per trait in the region
-          </p>
-          <div
-            style="
-              display: flex;
-              gap: 0rem;
-              align-items: flex-start;
-              margin-top: 0.1em;
-              flex-wrap: wrap;
-            "
-          >
-            <div style="flex: 1; min-width: 100px">
-              <ul
-                style="
-                  font-size: 0.82em;
-                  list-style-type: disc;
-                  margin-top: 0;
-                  line-height: 1.55;
-                "
-              >
-                <li><strong>H0</strong>: 1❌ 2❌.</li>
-                <li><strong>H1</strong>: 1 ✅ 2❌.</li>
-                <li><strong>H2</strong>: 1 ❌ 2 ✅.</li>
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">What colocalisation asks?</h3>
+            <div class="glass glass-panel">
+              <ul class="list-clean">
+                <li>Are both traits associated in this region?</li>
                 <li>
-                  <strong>H3</strong>: 1 ✅ 2 ✅,
-                  <strong>different</strong> signals.
+                  If yes, are they more consistent with
+                  <strong>one shared causal variant</strong> than with
+                  <strong>two distinct variants</strong>?
                 </li>
                 <li>
-                  <strong>H4</strong>: 1 ✅ 2 ✅, <strong>shared</strong>
-                  signals.
+                  How strong is that support after accounting for uncertainty?
                 </li>
               </ul>
-              <p style="font-size: 0.8em; margin-top: 0em; text-align: left">
-                Main output: posterior probabilities (PP) for H0 to H4,
-                especially
-                <strong>PP.H4</strong>.
-              </p>
             </div>
-            <div style="flex: 1.2; min-width: 320px; text-align: center">
+          </div>
+          <aside class="notes">
+            Colocalisation asks three things in sequence. First, is trait 1
+            associated in this region, and is trait 2 also associated in this
+            region? Second, if both are associated, is the overall pattern more
+            consistent with one shared causal variant or with two distinct causal
+            variants? Third, how confident are we after accounting for
+            uncertainty across all SNPs in the locus?
+          </aside>
+        </section>
+
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">
+              Why not just look at <strong>lead SNPs</strong> or
+              <strong>fine-mapping</strong> results?
+            </h3>
+            <div class="glass glass-panel">
+              <ul class="list-clean">
+                <li>Lead SNPs can differ across traits due to LD and noise.</li>
+                <li>
+                  Nearby peaks can reflect shared or distinct causal variants.
+                </li>
+                <li>
+                  Fine-mapping methods like SuSiE may not powerful enough to find
+                  the exact shared SNP.
+                </li>
+              </ul>
+            </div>
+          </div>
+          <aside class="notes">
+            This is why visual overlap or matching lead SNPs is not enough. LD
+            can make different causal variants look similar, and sampling noise
+            can make the lead SNP differ even when the underlying causal variant
+            is the same. Fine-mapping helps, but it does not by itself answer
+            the cross-trait question. COLOC is useful because it compares these
+            explanations explicitly.
+          </aside>
+        </section>
+</section>
+
+        <section class="image-slide use-cases-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Where we can use colocalisation?</h3>
+            <div class="media-frame wide-media" style="margin-top: -1em">
               <img
-                src="img/coloc_illu.png"
-                alt="Illustration of COLOC hypotheses"
-                style="max-width: 100%; height: auto"
+                src="img/type.jpg"
+                alt="Illustration of different types of colocalisation analyses"
+                style="max-width: 65%; max-height: 60%"
               />
             </div>
           </div>
           <aside class="notes">
-            This is the classical COLOC picture. The single-causal-variant
-            assumption is what makes the original framework elegant and fast. It
-            also explains why the results are so easy to communicate. We get
-            five mutually exclusive hypotheses, and the one everyone stares at
-            is H4. But it is crucial to remember the assumption underneath this
-            convenience. If the region really contains multiple signals for one
-            or both traits, then the original model can compress a messy locus
-            into a deceptively tidy answer. That problem will come back later
-            when we discuss SuSiE.
+            This slide broadens the use case. Colocalisation is not restricted
+            to GWAS against eQTL. We can compare two GWAS traits, or two
+            molecular traits, as long as they are measured in the same genomic
+            region and we want to ask whether they share causal architecture.
+            The framework is general; the key requirement is the regional causal
+            question.
           </aside>
         </section>
 
-        <section>
-          <h3>COLOC: A Real Data Example</h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-              src="img/coloc_illu_realdata.png"
-              alt="Real data example of COLOC analysis"
-              style="max-width: 60%; height: auto"
-            />
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Molecular Quantitative Trait Locus (molQTL)</h3>
+            <div class="media-frame wide-media" style="margin-top: -1em">
+              <img
+                src="img/qtl.png"
+                alt="Illustration of QTL types"
+                style="max-width: 95%; max-height: 60%"
+              />
+            </div>
+            <p style="font-size: 0.8em; margin-top: 0">
+              molQTL mapping links genetic variants to molecular phenotypes (e.g., expression, methylation).
+            </p>
+          </div>
+          <aside class="notes">
+
+          </aside>
+        </section>
+
+        <section class="part-divider">
+          <div class="slide-shell section-divider">
+            <div class="glass glass-panel">
+              <!-- <p class="eyebrow">Part 2</p> -->
+              <h2>Part 2: <br /><strong>COLOC</strong> workflow</h2>
+            </div>
+          </div>
+          <aside class="notes">
+            Now we move from motivation to workflow. If the audience remembers
+            one practical pipeline from this talk, it should be the standard
+            COLOC.abf workflow. I will first show the original model, then the
+            required inputs, and then how to interpret the output in a sensible
+            order.
+          </aside>
+        </section>
+
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">The original COLOC (2014) model</h3>
+            <p class="body-small" style="margin-top: 3pt; text-align: left">
+              Assumption:
+              <strong>at most one causal variant </strong>per trait in the region
+            </p>
+            <div class="two-col" style="margin-top: -0.1em">
+              <div class="glass glass-panel text-col" style="font-size: 0.85em">
+                <ul class="list-clean">
+                  <li><strong>H0</strong>: 1❌ 2❌.</li>
+                  <li><strong>H1</strong>: 1 ✅ 2❌.</li>
+                  <li><strong>H2</strong>: 1 ❌ 2 ✅.</li>
+                  <li>
+                    <strong>H3</strong>: 1 ✅ 2 ✅
+                    <strong>different</strong> signals.
+                  </li>
+                  <li>
+                    <strong>H4</strong>: 1 ✅ 2 ✅ <strong>shared</strong>
+                    signals.
+                  </li>
+                </ul>
+                <p class="body-small" style="margin-top: 0em; text-align: left">
+                  Main output: posterior probabilities (PP) for H0 to H4,
+                  especially
+                  <strong>PP.H4</strong>.
+                </p>
+              </div>
+              <div class="glass media-frame media-col">
+                <img
+                  src="img/coloc_illu.png"
+                  alt="Illustration of COLOC hypotheses"
+                  style="max-width: 100%; height: auto"
+                />
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            This is the classical 2014 COLOC framework. Its appeal is that it is
+            simple, fast, and gives five mutually exclusive hypotheses from H0
+            to H4. The crucial assumption is that each trait has at most one
+            causal variant in the region. That assumption makes interpretation
+            easy, but it is also the main limitation we need to remember later.
+          </aside>
+        </section>
+
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">COLOC: A Real Data Example</h3>
+            <div class="glass media-frame wide-media image-max-60">
+              <img
+                src="img/coloc_illu_realdata.png"
+                alt="Real data example of COLOC analysis"
+                style="max-width: 60%; height: auto"
+              />
+            </div>
           </div>
         </section>
 
-        <section>
-          <h3>What data does COLOC need?</h3>
-          <div
-            style="
-              display: flex;
-              gap: 0rem;
-              align-items: flex-start;
-              margin-top: 0.8em;
-              flex-wrap: wrap;
-            "
-          >
-            <div style="flex: 1; min-width: 280px">
-              <p style="font-size: 0.9em; margin-top: 0">
-                <strong>Requirement</strong>
-              </p>
-              <ul
-                style="
-                  font-size: 0.7em;
-                  list-style-type: disc;
-                  line-height: 1.5;
-                "
-              >
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">What data does COLOC need?</h3>
+            <div class="glass-grid">
+              <div class="glass glass-panel">
+                <p style="font-size: 0.9em; margin-top: 0">
+                  <strong>Requirement</strong>
+                </p>
+                <ul class="list-compact">
                 <li>
                   Two <strong>traits</strong>, one
                   <strong>genomic region</strong>.
@@ -341,44 +326,36 @@
                 <li>Case-control or Quantitative trait.</li>
                 <li>Recommended inputs: beta + varbeta.</li>
                 <!-- <li>sdY (the standard deviation of the quantitative trait) or p values + MAF + sample size.</li> -->
-              </ul>
-            </div>
-            <div style="flex: 1; min-width: 280px">
-              <p style="font-size: 0.9em; margin-top: 0">
-                <strong>Common mistakes</strong>
-              </p>
-              <ul
-                style="
-                  font-size: 0.7em;
-                  list-style-type: square;
-                  line-height: 1.5;
-                "
-              >
-                <li>Not aligning the directions of effect.</li>
-                <li>Using a whole chromosome or genome.</li>
-                <li>Merging several genes into one eQTL dataset.</li>
-                <li>Using only the lead SNPs.</li>
-              </ul>
+                </ul>
+              </div>
+              <div class="glass glass-panel">
+                <p style="font-size: 0.9em; margin-top: 0">
+                  <strong>Common mistakes</strong>
+                </p>
+                <ul class="list-compact">
+                  <li>Not aligning the directions of effect.</li>
+                  <li>Using a whole chromosome or genome.</li>
+                  <li>Merging several genes into one eQTL dataset.</li>
+                  <li>Using only the lead SNPs.</li>
+                </ul>
+              </div>
             </div>
           </div>
           <aside class="notes">
-            This slide is more important than many people expect. A large
-            fraction of bad COLOC analyses fail before the function is even
-            called. The official tutorials emphasize that COLOC expects one
-            trait in one reasonably bounded region, with dense SNP coverage and
-            a common SNP set across the two datasets. Do not prune away the
-            local structure you are trying to compare. If you remove most SNPs
-            and keep only top hits, COLOC loses the pattern information that
-            makes the method work. This point sounds mundane, but it is where
-            many pipelines quietly sabotage themselves. [Sources] - Official
-            COLOC data tutorial. - Official FAQ. - Official COLOC.abf reference.
+            This is one of the most practical slides in the talk because many
+            bad analyses fail before COLOC is even run. The method expects two
+            traits, one bounded region, a common dense SNP set, and properly
+            harmonized summary statistics. If you trim the data down to a few
+            lead SNPs, you remove exactly the regional pattern that COLOC needs
+            in order to compare the two traits.
           </aside>
         </section>
 
-        <section>
-          <h3>COLOC model</h3>
-          <div style="text-align: left; margin-top: 0.1em; font-size: 0.6em">
-            <p style="margin-bottom: 0.5em"><strong>Posterior probability of H4:</strong></p>
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">COLOC model</h3>
+            <div class="glass math-panel">
+              <p class="formula-label"><strong>Posterior probability of H4:</strong></p>
             $$
 \begin{aligned}
 \text{PPH4} & =P\left(H_4 \mid D\right) \\
@@ -387,7 +364,7 @@
 \end{aligned}
             $$
 
-            <p style="margin-top: 0em; margin-bottom: 0.3em"><strong>Bayes factor ratio:</strong></p>
+              <p style="margin-top: 0em; margin-bottom: 0.3em"><strong>Bayes factor ratio:</strong></p>
             $$
             \frac{P(H_h \mid D)}{P(H_0 \mid D)} = \sum_{S \in S_h} \underbrace{\frac{P(D \mid S)}{P(D \mid S_0)}}_{\color{red}{\text{Bayes Factor (BF)}}} \times \underbrace{\frac{P(S)}{P(S_0)}}_{\color{red}{\text{Prior odds}}}
             $$
@@ -398,37 +375,22 @@
             $$ -->
           </div>
         </section>
-        </section>
 
-        <section>
-        <h3>Calculation of ABF</h3>
-        <p style="font-size: 0.8em; margin-top: 2px; text-align: left">
-          For the $j^{th}$ SNP, we use Wakefield's method to calculate the Aapproximate Bayes factor (ABF) of association with trait $T$:
+        <section class="content-slide">
+        <div class="slide-shell compact">
+        <h3 class="content-title">Calculation of ABF</h3>
+        <div class="glass glass-panel">
+        <p class="body-small" style="margin-top: 2px; text-align: left">
+          For the $j^{th}$ SNP, we use Wakefield's method to calculate the Approximate Bayes Factor (ABF) of association with trait $T$:
         </p>
-        <div style="text-align: left; margin-top: -0.8pt; font-size: 0.5em">
+        <div class="math-panel" style="margin-top: -1em; font-size: 0.8em">
           $$
           \text{ABF}_j^T = \sqrt{1-r} \times \exp\left[\frac{Z_j^2}{2} \times r\right]
           $$
         </div>
-          <ul
-          style="
-            font-size: 0.62em;
-            list-style-type: disc;
-            margin-top: 0.1pt;
-            line-height: 1.6;
-          "
-          >
+          <ul class="list-compact body-smaller" style="margin-top: -1.5em">
             <li>
               <strong>$Z$ (Wald test statistic)</strong>: $Z = \hat{\beta}/\sqrt{V}$.
-            </li>
-            <li>
-              <strong>$r$ (Shrinkage factor)</strong>: $r = \frac{W}{V + W}$. This factor ranges from 0 to 1 and measures
-              the relative contribution of the prior ($W$) versus data
-              likelihood ($V$). As sample size increases, $V \to 0$ and
-              $r \to 1$.
-            </li>
-            <li>
-              <strong>$V$ (Variance of the estimated effect size)</strong>: Also known as $\text{SE}^2$.
             </li>
             <li>
               <strong>$W$ (Prior variance)</strong>: The prior variance of the
@@ -436,90 +398,84 @@
               $W = 0.15^2$ for continuous quantitative traits and
               $W = 0.2^2$ for case-control studies.
             </li>
+            <li>
+              <strong>$r$ (Shrinkage factor)</strong>: $r = \frac{W}{V + W}$. This factor ranges from 0 to 1 and measures
+              the relative contribution of the prior ($W$) versus data
+              likelihood ($V$). As sample size increases, $V \to 0$ and
+              $r \to 1$.
+            </li>
           </ul>
+        </div>
+        </div>
           <aside class="notes">
-            The ABF is a critical component of the COLOC framework. It quantifies the evidence for association at each SNP, incorporating both the observed data (through the Z statistic) and prior beliefs about effect sizes (through the shrinkage factor r). The formula is derived from Wakefield's work on asymptotic Bayes factors, which provides a computationally efficient way to approximate the evidence for association without needing to specify a full likelihood model. Understanding how ABF is calculated and what it represents is essential for interpreting COLOC results correctly. [Sources] - Wakefield 2009. - Official COLOC.abf reference.
+            I do not want the audience to memorize this equation, but I do want
+            them to understand the intuition. For each SNP, the ABF measures how
+            much more the data support association than the null, while also
+            incorporating a prior on plausible effect sizes. So the key idea is
+            that COLOC starts from SNP-level evidence and then aggregates that
+            evidence into region-level hypotheses.
           </aside>
         </section>
 
-        <section>
-        <h3>Calculation of PPH4</h3>
+        <section class="content-slide">
+        <div class="slide-shell compact">
+        <h3 class="content-title">Calculation of PPH4</h3>
         <!-- <p style="font-size: 0.8em; margin-top: 5px; text-align: left">
           The posterior probability for hypothesis H4 (PPH4) is calculated by first computing the Bayes factor ratios for each hypothesis relative to the null hypothesis (H0). The formulas for these ratios are as follows:
         </p> -->
-        <div style="text-align: left; margin-top: 0.1em; font-size: 0.6em">
-          $$\text{PPH4} = \frac{\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}{1+\frac{P\left(H_1 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_2 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_3 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}$$
+        <div class="glass math-panel" style="margin-top: 0.1em; font-size: 0.6em">
+          $$\text{PPH4} = \frac{\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}{1+\frac{P\left(H_1 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_2 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_3 \mid D\right)}{P\left(H_0 \mid D\right)}+\frac{P\left(H_4 \mid D\right)}{P\left(H_0 \mid D\right)}}.$$
           $$
             \begin{aligned}
             <!-- \frac{P(H_0|D)}{P(H_0|D)} & = 1 \\ -->
             \frac{P(H_1|D)}{P(H_0|D)} & = p_1 \sum_{j=1}^{Q} \text{ABF}_{j}^{1},\quad
-            \frac{P(H_2|D)}{P(H_0|D)} = p_2 \sum_{j=1}^{Q} \text{ABF}_{j}^{2} \\
+            \frac{P(H_2|D)}{P(H_0|D)} = p_2 \sum_{j=1}^{Q} \text{ABF}_{j}^{2}, \\
             \frac{P(H_3|D)}{P(H_0|D)} & = p_1 p_2 \sum_{j \neq k} \text{ABF}_{j}^{1} \times \text{ABF}_{k}^{2},\quad
-            \frac{P(H_4|D)}{P(H_0|D)} = p_{12} \sum_{j=1}^{Q} \text{ABF}_{j}^{1} \times \text{ABF}_{j}^{2}
+            \frac{P(H_4|D)}{P(H_0|D)} = p_{12} \sum_{j=1}^{Q} \text{ABF}_{j}^{1} \times \text{ABF}_{j}^{2}.
             \end{aligned}
           $$
         </div>
+        </div>
         </section>
 
-        <section>
-          <h3>A practical baseline workflow</h3>
-          <ol
-            style="
-              font-size: 0.8em;
-              margin-top: 0.8em;
-              line-height: 1.6;
-              margin-left: 3em;
-            "
-          >
-            <li>Define a single candidate locus.</li>
-            <li>Harmonize the SNP set across the two studies.</li>
-            <li>(Optional) Build COLOC datasets and check them.</li>
-            <li>Run <strong>COLOC.abf()</strong>.</li>
-            <li>Read the regional posterior summary.</li>
-            <li>
-              (Optional) Inspect SNP-level support only if H4 is convincing.
-            </li>
-          </ol>
-          <p style="font-size: 0.75em; margin-top: 1em; text-align: left">
-            Useful functions in the tutorials: <code>check_dataset()</code>,
-            <code>COLOC.abf()</code>, <code>sensitivity()</code>.
-          </p>
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">A practical baseline workflow</h3>
+            <div class="glass glass-panel">
+              <ol class="workflow-list">
+                <li>Define a single candidate locus.</li>
+                <li>Harmonize the SNP set across the two studies.</li>
+                <li>(Optional) Build COLOC datasets and check them.</li>
+                <li>Run <strong>COLOC.abf()</strong>.</li>
+                <li>Read the regional posterior summary.</li>
+                <li>
+                  (Optional) Inspect SNP-level support only if H4 is convincing.
+                </li>
+              </ol>
+              <p class="body-smaller" style="margin-top: 1em; text-align: left">
+                Useful functions in the tutorials: <code>check_dataset()</code>,
+                <code>COLOC.abf()</code>, <code>sensitivity()</code>.
+              </p>
+            </div>
+          </div>
           <aside class="notes">
-            Operationally, this is the minimum sensible workflow. First define
-            the region. Second prepare the data carefully. Third run COLOC.abf.
-            Fourth interpret the result in two layers. Start with the regional
-            summary: are we seeing support for H4, H3, or mostly nothing? Only
-            then move to SNP-level output. Beginners often jump straight to
-            SNP.PP.H4 because it looks precise. That is backwards. If the
-            regional evidence for H4 is weak, the SNP-level H4 distribution is
-            not the place to build a story. [Sources] - Official COLOC data
-            tutorial. - Official COLOC.abf reference. - Official sensitivity
-            tutorial.
+            This is the minimum practical workflow. First define a single locus.
+            Second harmonize the SNP set between studies. Third, if needed, use
+            the helper functions to validate the inputs. Fourth, run COLOC.abf.
+            Finally, interpret the result in the right order: start with the
+            regional posterior, and only then look at SNP-level quantities.
           </aside>
         </section>
 
-        <section>
-          <h3>How to read the output correctly</h3>
-          <div
-            style="
-              display: flex;
-              gap: 2rem;
-              align-items: flex-start;
-              margin-top: 0.8em;
-              flex-wrap: wrap;
-            "
-          >
-            <div style="flex: 1; min-width: 280px">
-              <p style="font-size: 0.9em; margin-top: 0">
-                <strong>Regional layer</strong>
-              </p>
-              <ul
-                style="
-                  font-size: 0.78em;
-                  list-style-type: disc;
-                  line-height: 1.5;
-                "
-              >
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">How to read the output correctly</h3>
+            <div class="two-col">
+              <div class="glass glass-panel">
+                <p style="font-size: 0.9em; margin-top: 0">
+                  <strong>Regional layer</strong>
+                </p>
+                <ul class="list-clean body-small">
                 <li>
                   <strong>PP.H4</strong>: support for one shared causal variant
                   in the region.
@@ -529,357 +485,330 @@
                   variants in the region.
                 </li>
                 <li>Interpret this layer first.</li>
-              </ul>
-            </div>
-            <div style="flex: 1; min-width: 280px">
-              <p style="font-size: 0.9em; margin-top: 0">
-                <strong>SNP layer</strong>
-              </p>
-              <ul
-                style="
-                  font-size: 0.78em;
-                  list-style-type: square;
-                  line-height: 1.5;
-                "
-              >
-                <li>
+                </ul>
+              </div>
+              <div class="glass glass-panel">
+                <p style="font-size: 0.9em; margin-top: 0">
+                  <strong>SNP layer</strong>
+                </p>
+                <ul class="list-clean body-small">
+                  <li>
                   <strong>SNP.PP.H4</strong>: which SNP is most likely shared,
                   <strong>conditional on H4</strong>.
-                </li>
-                <li>
+                  </li>
+                  <li>
                   High PP.H4 can still coexist with uncertainty about the exact
                   SNP.
+                  </li>
+                  <li>
+                  Regional colocalisation is not identical to SNP resolution.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            This distinction is worth pausing on. PP.H4 is a regional statement:
+            do the data support one shared causal variant somewhere in the
+            locus? SNP.PP.H4 is a conditional statement: if H4 is true, which
+            SNP is the best candidate? Strong regional colocalisation does not
+            guarantee precise SNP resolution, because multiple variants can
+            remain statistically similar in LD.
+          </aside>
+        </section>
+
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Examples of COLOC's Output</h3>
+            <div class="glass media-frame wide-media image-max-80">
+              <img
+                src="img/coloc_output.png"
+                alt="Examples of COLOC output showing different posterior probabilities"
+                style="max-width: 80%; height: auto"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Examples of COLOC's Output</h3>
+            <div class="glass media-frame wide-media image-max-80">
+              <img
+                src="img/snph4.png"
+                alt="Examples of COLOC output showing different posterior probabilities"
+                style="max-width: 80%; height: auto"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Priors are important!</h3>
+            <div class="glass glass-panel">
+              <p class="body-small" style="margin-top: 5px; text-align: left">
+                COLOC uses three per-SNP prior probabilities:
+              </p>
+              <ul class="list-clean">
+                <li><strong>p1</strong>: the SNP is causal for trait 1.</li>
+                <li><strong>p2</strong>: the SNP is causal for trait 2.</li>
+                <li>
+                  <strong>p12</strong>: the SNP is causal for
+                  <strong>both</strong> traits.
+                </li>
+              </ul>
+              <p class="body-smaller" style="margin-top: 1em; text-align: left">
+                Important idea: priors are specified <strong>per SNP</strong>, but
+                posterior conclusions are interpreted at the
+                <strong>region</strong> level.
+              </p>
+            </div>
+          </div>
+          <aside class="notes">
+            This is where many analyses become more subjective than people
+            realize. Priors are specified per SNP, but the conclusions are often
+            discussed at the region level. That means locus size and prior
+            choice interact. In a larger region, H3 can become relatively more
+            competitive simply because there are many more ways to choose two
+            distinct causal variants than one shared one.
+          </aside>
+        </section>
+
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Prior: SNP vs. Region</h3>
+            <div class="glass media-frame wide-media image-max-90">
+              <img
+                src="img/define_prior.png"
+                alt="Illustration of the difference between SNP-level and region-level priors in COLOC"
+                style="max-width: 90%; height: auto"
+              />
+            </div>
+          </div>
+        </section>
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Sensitivity analysis of priors</h3>
+            <div class="glass media-frame wide-media image-max-80">
+              <img
+                src="img/sensitivity.png"
+                alt="Illustration of sensitivity analysis for COLOC priors"
+                style="max-width: 80%; height: auto"
+              />
+            </div>
+          </div>
+          <aside class="notes">
+            Sensitivity analysis is not just a technical extra. It tells us
+            whether our conclusion is robust or whether it depends heavily on
+            one arbitrary prior setting. If a strong H4 result remains stable
+            across reasonable priors, that is much more convincing than a result
+            that changes immediately when p12 moves.
+          </aside>
+        </section>
+
+        <section class="part-divider">
+          <div class="slide-shell section-divider">
+            <div class="glass glass-panel">
+              <!-- <p class="eyebrow">Part 3</p> -->
+              <h2>
+                Part 3: <strong>coloc.susie</strong><br />When one signal per
+                trait<br />is not enough
+              </h2>
+            </div>
+          </div>
+          <aside class="notes">
+            Up to this point, the story assumed at most one causal variant per
+            trait in the region. That assumption is convenient, but biology is
+            often more complicated than that. Once a locus contains multiple
+            signals, standard COLOC.abf can become misleading. That is why we
+            need coloc.susie.
+          </aside>
+        </section>
+
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Where the single-causal assumption breaks</h3>
+            <div class="glass glass-panel">
+              <ul class="list-clean">
+                <li>
+              A locus may contain <strong>one shared signal</strong> and
+              <strong>one extra trait-specific signal</strong>.
+                </li>
+                <li><code>COLOC.abf()</code> ignores LD structure.</li>
+                <li>
+              Historically, <strong>conditioning and masking</strong> were used
+              to relax the assumption.
                 </li>
                 <li>
-                  Regional colocalisation is not identical to SNP resolution.
+              Today, the recommended solution is to use
+              <strong>SuSiE-based COLOC</strong>.
                 </li>
               </ul>
             </div>
           </div>
           <aside class="notes">
-            This is a slide I would pause on. PP.H4 is a regional statement. It
-            says the data support shared causality somewhere in the locus.
-            SNP.PP.H4 is more specific: which SNP looks most plausible as the
-            shared causal variant, assuming H4 is true. The official FAQ makes
-            this distinction clearly. It is completely possible to have strong
-            regional evidence for colocalisation but weak certainty about the
-            exact SNP because several variants are statistically similar. That
-            is not a contradiction. It is simply the normal reality of LD.
-            [Sources] - Official COLOC.abf reference. - Official FAQ. -
-            Giambartolomei et al. 2014.
+            This slide explains the failure mode. A locus can contain one signal
+            that is shared across traits and another signal that is
+            trait-specific. In that setting, forcing the whole locus into a
+            single-signal model can blur the interpretation. Historically people
+            used conditioning or masking, but the cleaner modern answer is to
+            model multiple signals directly.
           </aside>
         </section>
 
-        <section>
-          <h3>Examples of COLOC's Output</h3>
-
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-              src="img/coloc_output.png"
-              alt="Examples of COLOC output showing different posterior probabilities"
-              style="max-width: 80%; height: auto"
-            />
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Illustration of SuSiE-based COLOC</h3>
+            <div class="glass media-frame wide-media image-max-75">
+              <img
+                src="img/multi_signal.png"
+                alt="Illustration of SuSiE-based COLOC"
+                style="max-width: 75%; height: auto"
+              />
+            </div>
           </div>
         </section>
 
-        <section>
-          <h3>Examples of COLOC's Output</h3>
-
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-              src="img/snph4.png"
-              alt="Examples of COLOC output showing different posterior probabilities"
-              style="max-width: 80%; height: auto"
-            />
-          </div>
-        </section>
-
-        <section>
-          <h3>Priors are important!</h3>
-          <p style="font-size: 0.85em; margin-top: 5px; text-align: left">
-            COLOC uses three per-SNP prior probabilities:
-          </p>
-          <ul
-            style="
-              font-size: 0.8em;
-              list-style-type: disc;
-              margin-top: 0.8em;
-              line-height: 1.6;
-            "
-          >
-            <li><strong>p1</strong>: the SNP is causal for trait 1.</li>
-            <li><strong>p2</strong>: the SNP is causal for trait 2.</li>
-            <li>
-              <strong>p12</strong>: the SNP is causal for
-              <strong>both</strong> traits.
-            </li>
-          </ul>
-          <p style="font-size: 0.78em; margin-top: 1em; text-align: left">
-            Important idea: priors are specified <strong>per SNP</strong>, but
-            posterior conclusions are interpreted at the
-            <strong>region</strong> level.
-          </p>
-          <aside class="notes">
-            This slide comes straight from the 2020 paper's central lesson. Most
-            users keep default priors and move on. But misspecified priors can
-            materially change posterior inference, especially p12. There is also
-            a subtle but important scaling issue. Priors are assigned at the SNP
-            level, while H3 and H4 are regional hypotheses. As the number of
-            SNPs in the region grows, the combinatorics change. In larger
-            regions, H3 can become relatively more likely than H4 simply because
-            there are many more ways to choose two distinct causal variants than
-            one shared variant. That is why locus definition and prior thinking
-            are joined at the hip. [Sources] - Wallace 2020. - Official
-            sensitivity tutorial.
-          </aside>
-        </section>
-
-        <section>
-          <h3>Prior: SNP vs. Region</h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-              src="img/define_prior.png"
-              alt="Illustration of the difference between SNP-level and region-level priors in COLOC"
-              style="max-width: 90%; height: auto"
-            />
-          </div>
-        </section>
-        <section>
-          <h3>Sensitivity analysis of priors</h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-              src="img/sensitivity.png"
-              alt="Illustration of sensitivity analysis for COLOC priors"
-              style="max-width: 80%; height: auto"
-            />
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">What <code>coloc.susie()</code> does</h3>
+            <div class="glass media-frame wide-media image-max-95">
+              <img
+                src="img/coloc_susie.png"
+                alt="Illustration of SuSiE-based COLOC"
+                style="max-width: 95%; height: auto"
+              />
+            </div>
           </div>
           <aside class="notes">
-            If you remember one methodological habit from the 2020 paper, make
-            it this one. Sensitivity analysis is not a luxury add-on. It is how
-            we distinguish a robust colocalisation result from a fragile
-            prior-dependent story. In a discussion class, I would ask the
-            audience to imagine two papers that report the same PP.H4 under one
-            prior setting. One remains stable under reasonable variation; the
-            other flips immediately. Those are not equally convincing results.
-            The package now makes this much easier with a dedicated sensitivity
-            workflow. [Sources] - Wallace 2020. - Official sensitivity tutorial.
+            The key idea is to decompose the locus first, and compare signals
+            second. SuSiE separates each trait into multiple single-effect
+            components, and then COLOC evaluates pairs of signals across traits.
+            Conceptually, this is much closer to what we think complex loci
+            actually look like. The trade-off is that we now need LD
+            information and slightly more careful interpretation.
           </aside>
         </section>
 
-        <section>
-          <h2>
-            Part 3: <strong>coloc.susie</strong><br />When one signal per
-            trait<br />is not enough
-          </h2>
-          <aside class="notes">
-            Up to now, everything has assumed at most one causal variant per
-            trait in the region. That assumption is useful, but biology does not
-            owe us simplicity. Many loci have multiple independent signals. Once
-            that happens, standard COLOC.abf can become misleading. The next
-            slides explain why the field moved toward SuSiE-based COLOC.
-            [Sources] - Wallace 2020. - Wallace 2021.
-          </aside>
-        </section>
-
-        <section>
-          <h3>Where the single-causal assumption breaks</h3>
-          <ul
-            style="
-              font-size: 0.8em;
-              list-style-type: disc;
-              margin-top: 1em;
-              line-height: 1.6;
-            "
-          >
-            <li>
-              A locus may contain <strong>one shared signal</strong> and
-              <strong>one extra trait-specific signal</strong>.
-            </li>
-            <li><code>COLOC.abf()</code> ignores LD structure.</li>
-            <li>
-              Historically, <strong>conditioning and masking</strong> were used
-              to relax the assumption.
-            </li>
-            <li>
-              Today, the recommended solution is to use
-              <strong>SuSiE-based COLOC</strong>.
-            </li>
-          </ul>
-          <aside class="notes">
-            This is the main limitation of the original model. Wallace 2020
-            discussed conditioning and masking as ways to relax the assumption.
-            Conditioning can work, but it depends on aligned LD and a staged
-            procedure that can propagate error. Masking is a useful
-            approximation when full LD is unavailable. But the key development
-            is the 2021 paper, which adapts COLOC to use SuSiE. That approach is
-            more natural for multiple signals because it decomposes the locus
-            into separate signal-level components before comparing them across
-            traits. [Sources] - Wallace 2020. - Wallace 2021. - Official
-            deprecated conditioning tutorial. - Official SuSiE tutorial.
-          </aside>
-        </section>
-
-        <section>
-          <h3>Illustration of SuSiE-based COLOC</h3>
-          <div style="text-align: center; margin-top: 0em">
-            <img
-              src="img/multi_signal.png"
-              alt="Illustration of SuSiE-based COLOC"
-              style="max-width: 75%; height: auto"
-            />
-          </div>
-        </section>
-
-        <section>
-          <h3>What <code>coloc.susie()</code> does</h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-              src="img/coloc_susie.png"
-              alt="Illustration of SuSiE-based COLOC"
-              style="max-width: 95%; height: auto"
-            />
+        <section class="part-divider">
+          <div class="slide-shell section-divider">
+            <div class="glass glass-panel">
+              <!-- <p class="eyebrow">Part 4</p> -->
+              <h2>
+                Part 4: <strong>Variant-Specific Priors</strong><br />
+                Next steps for Colocalisation
+              </h2>
+            </div>
           </div>
           <aside class="notes">
-            The idea here is clean. Instead of forcing the entire locus into
-            one-signal logic, SuSiE first separates the association pattern into
-            multiple single-effect components. Then COLOC is run on pairs of
-            signals. In the 2021 paper and the current tutorial, this approach
-            clearly outperforms conditioning-based adaptations when multiple
-            signals exist. The price is that you now need LD, and the output
-            requires a bit more interpretation. But conceptually it is closer to
-            the biology of complex loci. If a student asks, “What should I use
-            when I strongly suspect allelic heterogeneity?” the short answer is:
-            use coloc.susie if you have appropriate LD. [Sources] - Wallace
-            2021. - Official SuSiE tutorial. - Official coloc.susie reference.
+            In the last part, I want to introduce a newer extension without
+            making it sound more dramatic than it is. Variant-specific priors do
+            not redefine colocalisation. They refine the prior model by allowing
+            some variants to start with more prior weight than others based on
+            external information.
           </aside>
         </section>
 
-        <section>
-          <h2>
-            Part 4: <strong>Variant-Specific Priors</strong><br />
-            Next steps for Colocalisation
-          </h2>
-          <aside class="notes">
-            We now finish with the most recent extension that matters for a
-            beginner-friendly seminar. The package is currently at version
-            6.0.1, and version 6 introduced variant-specific priors. This is not
-            a new definition of colocalisation. It is a refinement of the prior
-            model. [Sources] - Official articles index. - Pullin and Wallace
-            2025.
-          </aside>
-        </section>
-
-        <section>
-          <h3>Variant-specific priors</h3>
-          <div style="text-align: center; margin-top: 0.2em">
-            <img
-            src="img/coloc_prior.png"
-            alt="Illustration of variant-specific priors in COLOC"
-            style="max-width: 95%; height: auto"
-            />
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Variant-specific priors</h3>
+            <div class="glass media-frame wide-media image-max-95">
+              <img
+                src="img/coloc_prior.png"
+                alt="Illustration of variant-specific priors in COLOC"
+                style="max-width: 95%; height: auto"
+              />
+            </div>
           </div>
         </section>
         
-        <section>
-          <h3>Variant-specific priors</h3>
-          <ul
-            style="
-              font-size: 0.8em;
-              list-style-type: disc;
-              margin-top: 1em;
-              line-height: 1.6;
-            "
-          >
-            <li>
-              Use <code>prior_weights1</code> and <code>prior_weights2</code> in
-              <code>COLOC.abf()</code> or <code>coloc.susie()</code>.
-            </li>
-            <li>
-              Not all variants need the same prior probability of being causal.
-            </li>
-            <li>
-              Examples: functional annotations, PolyFun-style priors, or
-              eQTL-TSS distance priors.
-            </li>
-            <li>
-              The 2025 paper found modest but useful gains,
-              especially with <strong>eQTL-TSS distance density priors</strong>.
-            </li>
-          </ul>
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Variant-specific priors</h3>
+            <div class="glass glass-panel">
+              <ul class="list-clean">
+                <li>
+                  Use <code>prior_weights1</code> and <code>prior_weights2</code> in
+                  <code>COLOC.abf()</code> or <code>coloc.susie()</code>.
+                </li>
+                <li>
+                  Not all variants need the same prior probability of being causal.
+                </li>
+                <li>
+                  Examples: functional annotations, PolyFun-style priors, or
+                  eQTL-TSS distance priors.
+                </li>
+                <li>
+                  The 2025 paper found modest but useful gains,
+                  especially with <strong>eQTL-TSS distance density priors</strong>.
+                </li>
+              </ul>
+            </div>
+          </div>
           <aside class="notes">
-            I would frame this carefully for the audience. Variant-specific
-            priors are a helpful refinement, not a miracle rescue for poorly
-            prepared data. The 2025 paper shows that giving more prior mass to
-            biologically plausible variants can improve performance and can
-            change colocalisation calls in a meaningful minority of cases. But
-            the gains are described as modest overall. That is exactly how we
-            should present it: valuable, interpretable, and worth knowing, but
-            not a license to ignore locus definition, data preparation, or
-            multiple-signal structure. [Sources] - Pullin and Wallace 2025. -
-            Official variant-specific priors tutorial.
+            I would present this as a practical refinement, not a magic fix. If
+            you have biological annotation, fine-mapping-informed weights, or
+            distance-based priors, you can use that information to make the
+            prior more realistic. The gains are usually modest rather than
+            revolutionary, but they can still improve calibration and change
+            borderline decisions in useful ways.
           </aside>
         </section>
 
-        <section>
-          <h2>Take-home messages</h2>
-          <ul
-            style="
-              font-size: 0.8em;
-              list-style-type: disc;
-              margin-top: 1em;
-              line-height: 1.6;
-            "
-          >
-            <li>
-              <strong>COLOC tests shared causal variation in a region</strong>,
-              not just overlap of top SNPs.
-            </li>
-            <li>
-              <strong>Data preparation and priors matter</strong>; sensitivity
-              analysis should be routine.
-            </li>
-            <li>
-              <strong>For complex loci, coloc.susie is the key upgrade</strong>;
-              variant-specific priors are a useful refinement.
-            </li>
-          </ul>
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h2 class="content-title">Take-home messages</h2>
+            <div class="glass glass-panel">
+              <ul class="list-clean">
+                <li>
+                  <strong>COLOC tests shared causal variation in a region</strong>,
+                  not just overlap of top SNPs.
+                </li>
+                <li>
+                  <strong>Data preparation and priors matter</strong>; sensitivity
+                  analysis should be routine.
+                </li>
+                <li>
+                  <strong>For complex loci, coloc.susie is the key upgrade</strong>;
+                  variant-specific priors are a useful refinement.
+                </li>
+              </ul>
+            </div>
+          </div>
           <aside class="notes">
-            I would end by returning to the main narrative. Coloc begins with a
-            simple and important question: do two traits share a causal variant
-            in this region? The original 2014 framework gave the field a very
-            useful baseline. The 2020 work clarified how priors and sensitivity
-            analysis should be handled. The 2021 work made multiple-signal
-            analysis substantially better with SuSiE. And the 2025 work added
-            variant-specific priors as a principled refinement. So the story is
-            not that the old method was wrong and the new method is fashionable.
-            The story is that the field has been carefully relaxing unrealistic
-            assumptions while trying to keep interpretation honest. [Sources] -
-            Giambartolomei et al. 2014. - Wallace 2020. - Wallace 2021. - Pullin
-            and Wallace 2025.
+            To close, I would return to the main narrative. COLOC is about
+            shared causal variation in a region, not just overlap of peaks. Good
+            input data and sensible priors matter. And when loci are clearly
+            more complex, coloc.susie is the important upgrade. So the story of
+            the method is really the story of making causal interpretation more
+            honest.
           </aside>
         </section>
 
-        <section>
-          <h2>References</h2>
-          <ul style="font-size: 0.7em; list-style-type: disc; line-height: 1.5">
-            <li>
+        <section class="content-slide">
+          <div class="slide-shell compact">
+            <h2 class="content-title">References</h2>
+            <div class="glass glass-panel">
+              <ul class="reference-list">
+                <li>
               Giambartolomei C, Vukcevic D, Schadt EE, et al. 2014. Bayesian
               test for colocalisation between pairs of genetic association
               studies using summary statistics.
-            </li>
-            <li>
+                </li>
+                <li>
               Wallace C. 2020. Eliciting priors and relaxing the single causal
               variant assumption in colocalisation analyses.
-            </li>
-            <li>
+                </li>
+                <li>
               Wallace C. 2021. A more accurate method for colocalisation
               analysis allowing for multiple causal variants.
-            </li>
-            <li>
+                </li>
+                <li>
               Pullin J, Wallace C. 2025. Variant-specific priors clarify
               colocalisation analysis.
-            </li>
-            <li>
+                </li>
+                <li>
               COLOC tutorials:
               <a
                 href="https://chr1swallace.github.io/coloc/index.html"
@@ -888,16 +817,18 @@
                 style="font-size: 0.9em"
                 >https://chr1swallace.github.io/coloc/index.html</a
               >
-            </li>
-            <li>Some images generated with Nano Banana.</li>
-          </ul>
+                </li>
+                <li>Some images generated with Nano Banana.</li>
+              </ul>
+            </div>
+          </div>
           <aside class="notes">
-            These are the core references behind the seminar. For teaching
-            beginners, I would strongly recommend reading the official COLOC
-            data tutorial, the sensitivity tutorial, the SuSiE tutorial, and the
-            variant-specific priors tutorial in that order. That sequence
-            mirrors the logic of the talk. [Sources] - Official articles index.
-            - Official FAQ.
+            These are the main references behind the talk. If someone wants to
+            learn the method from scratch after today, I would recommend reading
+            the official data tutorial first, then the sensitivity tutorial,
+            then the SuSiE tutorial, and finally the variant-specific priors
+            tutorial. That sequence matches the progression of this
+            presentation.
           </aside>
         </section>
       </div>
