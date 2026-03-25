@@ -44,15 +44,9 @@
             </div>
           </div>
           <aside class="notes">
-            Today I will give a practical introduction to COLOC. I assume the
-            audience already knows what GWAS and QTL studies are, but may not
-            yet feel comfortable with how colocalisation is framed and
-            interpreted. I will move from the biological question, to the
-            standard COLOC workflow, to why priors matter, and finally to what
-            changes when one signal per trait is not enough. My goal is not to
-            cover every implementation detail. My goal is that by the end of
-            this talk, the logic of COLOC feels intuitive and the workflow feels
-            usable.
+            Good morning everyone. Today I'll be giving a practical introduction to COLOC. I'm assuming most of you are already familiar with GWAS and QTL studies, but you might not yet feel completely comfortable with how colocalisation is framed and interpreted in practice. 
+            
+            My goal today isn't to cover every single mathematical detail of the package. Instead, I want to make sure that by the end of this 45-minute session, the underlying logic of COLOC feels intuitive, and you feel confident setting up a reasonable analysis pipeline.
           </aside>
         </section>
 
@@ -77,12 +71,12 @@
             </div>
           </div>
           <aside class="notes">
-            This is the roadmap. Part 1 explains why overlap alone is not
-            enough. Part 2 introduces the standard COLOC workflow and how to
-            read the output. Part 3 shows why multi-signal loci require
-            coloc.susie. Part 4 ends with variant-specific priors as a practical
-            extension. I will keep coming back to this structure as we move
-            through the talk.
+            Here is our roadmap for today. 
+            
+            In Part 1, we'll discuss the biological motivation and why simply looking at overlapping signals isn't enough. 
+            In Part 2, we'll walk through the standard COLOC workflow and how to properly read its output. 
+            In Part 3, we'll look at what happens when a locus is messy and contains multiple signals, which is where coloc.susie comes in. 
+            And finally, in Part 4, we'll briefly touch on variant-specific priors as a recent, practical extension.
           </aside>
         </section>
         <section class="part-divider">
@@ -95,12 +89,9 @@
             </div>
           </div>
           <aside class="notes">
-            I want to start with the biological motivation rather than the
-            software. In practice, people often see a disease signal and an
-            eQTL signal in the same region and immediately want to connect them
-            mechanistically. That intuition is useful, but it is not yet
-            evidence of a shared causal variant. The next few slides explain why
-            that distinction matters.
+            Let's start with the biological motivation. Before we even think about running any software, we need to ask: why do we need colocalisation in the first place?
+            
+            In post-GWAS interpretation, it's a very familiar temptation to see a disease signal and an eQTL signal right next to each other, and immediately assume that the gene is causal. That intuition is a great starting point, but it's not enough evidence. As we'll see in the next few slides, nearby peaks can reflect a shared variant, but they can also just be different variants in LD.
           </aside>
         </section>
 
@@ -128,11 +119,9 @@
             </div>
           </div>
           <aside class="notes">
-            This is the central question of the whole presentation. We are not
-            asking whether the two plots look similar at a glance. We are asking
-            whether both traits are consistent with the same causal variant in
-            this region. If you keep that question in mind, the rest of the
-            method becomes much easier to understand.
+            So, this is the core question of the entire presentation: Do these two traits share a single causal variant in this specific genomic region?
+            
+            We are not just asking if the two association plots look similar visually. We are asking a much more specific statistical question about shared causality. If you keep this exact question in mind, the rest of the COLOC method will make a lot more sense.
           </aside>
         </section>
 
@@ -154,12 +143,13 @@
             </div>
           </div>
           <aside class="notes">
-            Colocalisation asks three things in sequence. First, is trait 1
-            associated in this region, and is trait 2 also associated in this
-            region? Second, if both are associated, is the overall pattern more
-            consistent with one shared causal variant or with two distinct causal
-            variants? Third, how confident are we after accounting for
-            uncertainty across all SNPs in the locus?
+            To answer that, colocalisation breaks the problem down into three sequential questions.
+            
+            First, is there even an association for Trait 1 in this region? And is there one for Trait 2? If not, there's nothing to colocalise.
+            
+            Second, if both are associated, is the overall pattern of association across the whole region more consistent with one shared causal variant, or with two completely distinct causal variants?
+            
+            And third, how confident are we in that conclusion, after accounting for all the uncertainty across all the SNPs in the locus?
           </aside>
         </section>
 
@@ -183,41 +173,85 @@
             </div>
           </div>
           <aside class="notes">
-            This is why visual overlap or matching lead SNPs is not enough. LD
-            can make different causal variants look similar, and sampling noise
-            can make the lead SNP differ even when the underlying causal variant
-            is the same. Fine-mapping helps, but it does not by itself answer
-            the cross-trait question. COLOC is useful because it compares these
-            explanations explicitly.
+            So why not just look at the lead SNPs? Or just run fine-mapping?
+            
+            This is exactly why visual overlap or matching lead SNPs is not enough. LD can make two different causal variants look incredibly similar. On the flip side, sampling noise can make the lead SNP differ between the two traits even when the underlying causal variant is exactly the same.
+            
+            Fine-mapping helps, but it doesn't explicitly answer the cross-trait question. COLOC is powerful because it explicitly compares these two explanations: shared versus distinct causal variants.
           </aside>
         </section>
 </section>
-
-        <section class="image-slide use-cases-slide">
+        <section class="content-slide">
           <div class="slide-shell compact">
-            <h3 class="content-title">Where we can use colocalisation?</h3>
-            <div class="media-frame wide-media" style="margin-top: -1em">
-              <img
-                src="img/type.jpg"
-                alt="Illustration of different types of colocalisation analyses"
-                style="max-width: 65%; max-height: 60%"
-              />
+            <h3 class="content-title">Colocalisation: A Powerful Tool</h3>
+            <div class="glass glass-panel">
+              <ul class="list-clean">
+                <li>It quantifies the evidence for <strong>shared / distinct causal variants</strong> in a region.</li>
+                <li>It <strong>does not need to find the causal variants</strong>.</li>
+                <li>It has direct implications for the <strong>understanding of complex diseases</strong> and <strong>design of drugs to target disease pathways</strong>.</li>
+              </ul>
             </div>
           </div>
           <aside class="notes">
-            This slide broadens the use case. Colocalisation is not restricted
-            to GWAS against eQTL. We can compare two GWAS traits, or two
-            molecular traits, as long as they are measured in the same genomic
-            region and we want to ask whether they share causal architecture.
-            The framework is general; the key requirement is the regional causal
-            question.
+            To summarize this first part, colocalisation is a powerful tool because it quantifies the evidence for shared versus distinct causal variants in a region.
+            
+            It moves us away from asking whether the two plots look similar, and instead asks whether both traits are consistent with the same causal variant in this region.
+          </aside>
+        </section>
+
+        <section class="two-col-example use-cases-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Where we can use colocalisation?</h3>
+            <div class="two-col balanced-two-col use-cases-layout">
+              <div class="col media-col balanced-col">
+                <div class="media-frame wide-media use-cases-media" style="margin-top: -1em">
+                  <img
+                    src="img/type.jpg"
+                    alt="Illustration of different types of colocalisation analyses"
+                    style="max-width: 95%; max-height: 80%"
+                  />
+                </div>
+              </div>
+              <div class="col text-col balanced-col use-cases-text" style="font-size: 0.8em; margin-left: -2em;">
+                <ul class="list-clean use-cases-list">
+                  <li>
+                    <span style="font-size:1.12em; color:var(--accent-strong); font-weight:600; letter-spacing:0.01em;">
+                      GWAS <span style="color:var(--text-muted); font-weight:400;">×</span> GWAS
+                    </span>
+                    <br>
+                    <span style="font-size:0.85em; color:var(--text-muted);">Trait vs. Trait</span>
+                  </li>
+                  <li style="margin-top: 0.7em;">
+                    <span style="font-size:1.12em; color:var(--accent-strong); font-weight:600; letter-spacing:0.01em;">
+                      GWAS <span style="color:var(--text-muted); font-weight:400;">×</span> QTL
+                    </span>
+                    <br>
+                    <span style="font-size:0.85em; color:var(--text-muted);">Disease vs. Regulatory Mechanism (e.g. expression)</span>
+                  </li>
+                  <li style="margin-top: 0.7em;">
+                    <span style="font-size:1.12em; color:var(--accent-strong); font-weight:600; letter-spacing:0.01em;">
+                      QTL <span style="color:var(--text-muted); font-weight:400;">×</span> QTL
+                    </span>
+                    <br>
+                    <span style="font-size:0.85em; color:var(--text-muted);">Molecular vs. Molecular (e.g. eQTL, meQTL, pQTL)</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            So where can we actually use colocalisation?
+            
+            It's important to remember that COLOC isn't just restricted to comparing a GWAS against an eQTL. We can compare two different GWAS traits, or two molecular traits, or any combination.
+            
+            As long as both traits are measured in the same genomic region and we want to ask whether they share causal architecture, the framework applies. The key requirement is that we are asking a regional causal question.
           </aside>
         </section>
 
         <section class="image-slide">
           <div class="slide-shell compact">
             <h3 class="content-title">Molecular Quantitative Trait Locus (molQTL)</h3>
-            <div class="media-frame wide-media" style="margin-top: -1em">
+            <div class="media-frame wide-media">
               <img
                 src="img/qtl.png"
                 alt="Illustration of QTL types"
@@ -229,7 +263,9 @@
             </p>
           </div>
           <aside class="notes">
-
+            As an example, here are some common molecular QTLs you might encounter.
+            
+            We can use colocalisation to compare GWAS signals with eQTLs, pQTLs, mQTLs, or any other molecular trait. This is a very common use case to try and identify the causal gene or mechanism underlying a GWAS hit.
           </aside>
         </section>
 
@@ -241,11 +277,9 @@
             </div>
           </div>
           <aside class="notes">
-            Now we move from motivation to workflow. If the audience remembers
-            one practical pipeline from this talk, it should be the standard
-            COLOC.abf workflow. I will first show the original model, then the
-            required inputs, and then how to interpret the output in a sensible
-            order.
+            Okay, now that we understand the motivation, let's move on to Part 2: the actual COLOC workflow.
+            
+            If you take away one practical pipeline from this talk, it should be the standard COLOC.abf workflow. I'll first walk you through the original model, then the required inputs, and finally how to interpret the output in a sensible order.
           </aside>
         </section>
 
@@ -287,11 +321,11 @@
             </div>
           </div>
           <aside class="notes">
-            This is the classical 2014 COLOC framework. Its appeal is that it is
-            simple, fast, and gives five mutually exclusive hypotheses from H0
-            to H4. The crucial assumption is that each trait has at most one
-            causal variant in the region. That assumption makes interpretation
-            easy, but it is also the main limitation we need to remember later.
+            This is the classical 2014 COLOC framework. Its appeal is that it's simple, fast, and gives us five mutually exclusive hypotheses, from H0 to H4.
+            
+            H0 means neither trait is associated. H1 and H2 mean only one trait is associated. H3 means both are associated, but with distinct causal variants. And H4 is the one we usually care about: both traits are associated and share a single causal variant.
+            
+            The crucial assumption here is that each trait has *at most one* causal variant in the region. That assumption makes interpretation easy, but it's also the main limitation we need to keep in mind for later.
           </aside>
         </section>
 
@@ -342,12 +376,9 @@
             </div>
           </div>
           <aside class="notes">
-            This is one of the most practical slides in the talk because many
-            bad analyses fail before COLOC is even run. The method expects two
-            traits, one bounded region, a common dense SNP set, and properly
-            harmonized summary statistics. If you trim the data down to a few
-            lead SNPs, you remove exactly the regional pattern that COLOC needs
-            in order to compare the two traits.
+            This is one of the most practical slides in the talk, because many bad analyses fail before COLOC is even run.
+            
+            The method expects two traits, one bounded region, a common dense SNP set, and properly harmonized summary statistics. If you trim your data down to just a few lead SNPs, you remove exactly the regional pattern that COLOC needs in order to compare the two traits.
           </aside>
         </section>
 
@@ -408,12 +439,11 @@
         </div>
         </div>
           <aside class="notes">
-            I do not want the audience to memorize this equation, but I do want
-            them to understand the intuition. For each SNP, the ABF measures how
-            much more the data support association than the null, while also
-            incorporating a prior on plausible effect sizes. So the key idea is
-            that COLOC starts from SNP-level evidence and then aggregates that
-            evidence into region-level hypotheses.
+            I don't expect you to memorize this equation, but I do want you to understand the intuition behind it.
+            
+            For each SNP, the Approximate Bayes Factor (or ABF) measures how much more the data support an association compared to the null, while also incorporating a prior on plausible effect sizes. 
+            
+            So the key idea is that COLOC starts from SNP-level evidence and then aggregates that evidence into region-level hypotheses.
           </aside>
         </section>
 
@@ -449,7 +479,7 @@
                 <li>Run <strong>COLOC.abf()</strong>.</li>
                 <li>Read the regional posterior summary.</li>
                 <li>
-                  (Optional) Inspect SNP-level support only if H4 is convincing.
+                  (Optional) Inspect SNP-level support if H4 is convincing.
                 </li>
               </ol>
               <p class="body-smaller" style="margin-top: 1em; text-align: left">
@@ -459,11 +489,11 @@
             </div>
           </div>
           <aside class="notes">
-            This is the minimum practical workflow. First define a single locus.
-            Second harmonize the SNP set between studies. Third, if needed, use
-            the helper functions to validate the inputs. Fourth, run COLOC.abf.
-            Finally, interpret the result in the right order: start with the
-            regional posterior, and only then look at SNP-level quantities.
+            Here is the minimum practical workflow.
+            
+            First, define a single locus. Second, harmonize the SNP set between your two studies. Third, if needed, use the helper functions to validate your inputs. Fourth, run COLOC.abf.
+            
+            And finally, interpret the result in the right order: always start with the regional posterior probabilities, and only then look at the SNP-level quantities.
           </aside>
         </section>
 
@@ -508,12 +538,13 @@
             </div>
           </div>
           <aside class="notes">
-            This distinction is worth pausing on. PP.H4 is a regional statement:
-            do the data support one shared causal variant somewhere in the
-            locus? SNP.PP.H4 is a conditional statement: if H4 is true, which
-            SNP is the best candidate? Strong regional colocalisation does not
-            guarantee precise SNP resolution, because multiple variants can
-            remain statistically similar in LD.
+            This distinction is really worth pausing on.
+            
+            PP.H4 is a regional statement: do the data support one shared causal variant *somewhere* in the locus?
+            
+            SNP.PP.H4 is a conditional statement: *if* H4 is true, which specific SNP is the best candidate?
+            
+            Strong regional colocalisation does not guarantee precise SNP resolution, because multiple variants can remain statistically similar due to LD. You can be very confident they share a variant, without knowing exactly which variant it is.
           </aside>
         </section>
 
@@ -566,12 +597,9 @@
             </div>
           </div>
           <aside class="notes">
-            This is where many analyses become more subjective than people
-            realize. Priors are specified per SNP, but the conclusions are often
-            discussed at the region level. That means locus size and prior
-            choice interact. In a larger region, H3 can become relatively more
-            competitive simply because there are many more ways to choose two
-            distinct causal variants than one shared one.
+            This is where many analyses become more subjective than people realize.
+            
+            Priors are specified per SNP, but our conclusions are usually discussed at the region level. That means locus size and prior choice interact. In a larger region, H3—the hypothesis of two distinct causal variants—can become relatively more competitive simply because there are many more ways to choose two distinct variants than there are to choose one shared one.
           </aside>
         </section>
 
@@ -599,11 +627,9 @@
             </div>
           </div>
           <aside class="notes">
-            Sensitivity analysis is not just a technical extra. It tells us
-            whether our conclusion is robust or whether it depends heavily on
-            one arbitrary prior setting. If a strong H4 result remains stable
-            across reasonable priors, that is much more convincing than a result
-            that changes immediately when p12 moves.
+            Sensitivity analysis is not just an optional technical extra. It tells us whether our conclusion is robust, or whether it depends heavily on one arbitrary prior setting.
+            
+            If a strong H4 result remains stable across a wide range of reasonable priors, that is much more convincing than a result that changes immediately when you tweak the parameters slightly.
           </aside>
         </section>
 
@@ -626,34 +652,48 @@
           </aside>
         </section>
 
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Where the single-causal assumption breaks</h3>
+            <div class="glass media-frame wide-media image-max-75">
+              <img
+                src="img/two_signals.png"
+                alt="Illustration of where the single-causal assumption breaks"
+                style="max-width: 75%; height: auto"
+              />
+            </div>
+            <p class="body-small" style=" text-align: left">A locus may contain <strong>multiple signals</strong>, but only one of them is shared.</p>
+          </div>
+          <aside class="notes">
+          This slide explains the failure mode. A locus may contain multiple signals, but only one of them is shared across traits. In that setting, forcing the whole locus into a single-signal model can blur the interpretation. Historically people used conditioning or masking, but the cleaner modern answer is to model multiple signals directly.
+          </aside>
+        </section>
+
         <section class="content-slide">
           <div class="slide-shell compact">
             <h3 class="content-title">Where the single-causal assumption breaks</h3>
             <div class="glass glass-panel">
               <ul class="list-clean">
                 <li>
-              A locus may contain <strong>one shared signal</strong> and
-              <strong>one extra trait-specific signal</strong>.
+              A locus may contain <strong>multiple signals</strong> and
+              <strong>some of them are shared across traits</strong>.
                 </li>
-                <li><code>COLOC.abf()</code> ignores LD structure.</li>
+                <li><code>COLOC</code> ignores LD structure.</li>
                 <li>
-              Historically, <strong>conditioning and masking</strong> were used
-              to relax the assumption.
+              Historically, <strong>conditioning</strong> was used to relax the assumption.
                 </li>
                 <li>
-              Today, the recommended solution is to use
-              <strong>SuSiE-based COLOC</strong>.
+              Today, the recommended solution is to use <strong>SuSiE + COLOC</strong>.
                 </li>
               </ul>
             </div>
           </div>
           <aside class="notes">
-            This slide explains the failure mode. A locus can contain one signal
-            that is shared across traits and another signal that is
-            trait-specific. In that setting, forcing the whole locus into a
-            single-signal model can blur the interpretation. Historically people
-            used conditioning or masking, but the cleaner modern answer is to
-            model multiple signals directly.
+            This slide explains exactly why the single-variant assumption fails.
+            
+            A single locus can easily contain one signal that is shared across both traits, and another signal that is specific to only one trait. If you force that entire region into a single-signal model, the interpretation gets blurred.
+            
+            Historically, people tried to solve this with conditional analysis or masking, but the cleaner, modern answer is to model multiple signals directly from the start.
           </aside>
         </section>
 
@@ -682,12 +722,11 @@
             </div>
           </div>
           <aside class="notes">
-            The key idea is to decompose the locus first, and compare signals
-            second. SuSiE separates each trait into multiple single-effect
-            components, and then COLOC evaluates pairs of signals across traits.
-            Conceptually, this is much closer to what we think complex loci
-            actually look like. The trade-off is that we now need LD
-            information and slightly more careful interpretation.
+            So how does coloc.susie work? The key idea is to decompose the locus first, and compare signals second.
+            
+            First, SuSiE separates each trait into multiple single-effect components. Then, COLOC evaluates pairs of these signals across the two traits.
+            
+            Conceptually, this is much closer to what we think complex loci actually look like biologically. The trade-off is that we now require LD information, and the interpretation requires a bit more care.
           </aside>
         </section>
 
@@ -702,11 +741,9 @@
             </div>
           </div>
           <aside class="notes">
-            In the last part, I want to introduce a newer extension without
-            making it sound more dramatic than it is. Variant-specific priors do
-            not redefine colocalisation. They refine the prior model by allowing
-            some variants to start with more prior weight than others based on
-            external information.
+            In this final part, I want to introduce a newer extension.
+            
+            Variant-specific priors don't redefine the core concept of colocalisation. Instead, they refine the prior model by allowing some variants to start with more prior weight than others, based on external biological information.
           </aside>
         </section>
 
@@ -727,32 +764,72 @@
           <div class="slide-shell compact">
             <h3 class="content-title">Variant-specific priors</h3>
             <div class="glass glass-panel">
-              <ul class="list-clean">
+              <ul class="list-clean" style="font-size: 0.7em;">
                 <li>
-                  Use <code>prior_weights1</code> and <code>prior_weights2</code> in
+                  Specify <code>prior_weights1</code> and <code>prior_weights2</code> in
                   <code>COLOC.abf()</code> or <code>coloc.susie()</code>.
                 </li>
-                <li>
-                  Not all variants need the same prior probability of being causal.
+                <li>Intuitively, not all variants have the same prior of being causal.
                 </li>
                 <li>
                   Examples: functional annotations, PolyFun-style priors, or
                   eQTL-TSS distance priors.
                 </li>
                 <li>
-                  The 2025 paper found modest but useful gains,
-                  especially with <strong>eQTL-TSS distance density priors</strong>.
+                  Such priors can improve performance,
+                  especially with <strong>eQTL-TSS distance density priors</strong> (variants that lie closer to the TSS are more likely to be causal).
+                </li>
+                <li>For each gene, measure the distance from its top eQTL to the TSS, then use KDE to estimate the prior distribution.
                 </li>
               </ul>
             </div>
           </div>
           <aside class="notes">
-            I would present this as a practical refinement, not a magic fix. If
-            you have biological annotation, fine-mapping-informed weights, or
-            distance-based priors, you can use that information to make the
-            prior more realistic. The gains are usually modest rather than
-            revolutionary, but they can still improve calibration and change
-            borderline decisions in useful ways.
+            I like to present this as a practical refinement, not a magic fix.
+            
+            If you have biological annotations, fine-mapping-informed weights, or even just distance-to-TSS, you can use that information to make your prior more realistic. The gains are usually modest rather than revolutionary, but they can still improve calibration and help resolve borderline cases.
+          </aside>
+        </section>
+
+        <section class="content-slide two-col-example prior-conclusion-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">Variant-Specific Priors Change Conclusion</h3>
+            <div class="two-col balanced-two-col" style="margin-top: 0.8em">
+              <div class="col text-col balanced-col">
+                <div class="glass glass-panel prior-text-panel" style="font-size: 0.7em;">
+                  <p style="margin-top: -0.5em">
+                    Example: GWAS signal across <em>PSMB7</em> and <em>NEK6</em> because of the extended LD.
+                  </p>
+                  <ul class="body-small">
+                    <li>
+                      Using <code>coloc-single</code>, this signal strongly colocalised with eQTL associations for both genes in GTEx (d).
+                    </li>
+                    <li>
+                      GWAS signal is spread across both genes, though the peak is nearer the <em>NEK6</em> TSS than the <em>PSMB7</em> TSS.
+                    </li>
+                    <li>
+                      In eQTL, peaks for each gene are close to their respective TSSs (b/c).
+                    </li>
+                    <li>
+                      When using a <em>NEK6</em> TSS–centered prior in GWAS–NEK6 colocalisation, the signal remains significant, but using a <em>PSMB7</em> TSS–centered prior for GWAS–PSMB7 colocalisation, PPH4 drops to 0.42.
+                    </li>
+                    <li>
+                      Therefore, incorporating prior information at this locus changes the colocalisation conclusion to strongly prefer <em>NEK6</em> as the causal gene.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col media-col balanced-col">
+                <div class="prior-image-wrap">
+                  <img src="img/prior_compare.png" alt="TSS informed prior comparison" class="prior-image" style="max-height: 18em; width: auto; display:inline-block; margin: 0 auto;" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside class="notes">
+            Here is a great example of the practical impact of using variant-specific priors.
+            
+            In a region with extended LD, the standard model might be ambiguous. But by upweighting variants close to the most plausible Transcription Start Site, we can shift the statistical support from multiple candidate genes to the most biologically likely one, resolving the ambiguity.
           </aside>
         </section>
 
@@ -767,7 +844,7 @@
                 </li>
                 <li>
                   <strong>Data preparation and priors matter</strong>; sensitivity
-                  analysis should be routine.
+                  analysis could be helpful.
                 </li>
                 <li>
                   <strong>For complex loci, coloc.susie is the key upgrade</strong>;
@@ -777,12 +854,13 @@
             </div>
           </div>
           <aside class="notes">
-            To close, I would return to the main narrative. COLOC is about
-            shared causal variation in a region, not just overlap of peaks. Good
-            input data and sensible priors matter. And when loci are clearly
-            more complex, coloc.susie is the important upgrade. So the story of
-            the method is really the story of making causal interpretation more
-            honest.
+            To wrap up, I want to return to our main narrative.
+            
+            First, COLOC is about testing for shared causal variation in a region, not just looking for overlapping peaks.
+            Second, data preparation and sensible priors matter immensely.
+            And third, when loci are clearly complex, coloc.susie is the essential upgrade.
+            
+            Ultimately, the story of this method is really the story of making our causal interpretations more rigorous and honest.
           </aside>
         </section>
 
@@ -823,12 +901,11 @@
             </div>
           </div>
           <aside class="notes">
-            These are the main references behind the talk. If someone wants to
-            learn the method from scratch after today, I would recommend reading
-            the official data tutorial first, then the sensitivity tutorial,
-            then the SuSiE tutorial, and finally the variant-specific priors
-            tutorial. That sequence matches the progression of this
-            presentation.
+            Here are the main references behind today's talk.
+            
+            If you want to dive deeper and learn the method from scratch, I highly recommend reading the official vignettes in this order: start with the data tutorial, then the sensitivity tutorial, then SuSiE, and finally the variant-specific priors. That sequence exactly matches the progression of what we covered today.
+            
+            Thank you for your time, and I'm happy to take any questions.
           </aside>
         </section>
       </div>
