@@ -340,6 +340,10 @@
               />
             </div>
           </div>
+          <aside class="notes">
+            Here is a real data example of COLOC analysis.
+            Fig A is the GWAS for LDL and B is the eQTL of gene FRK for the same region. Visually, they seem to have distinct signals and PPH3 is 99%. On the contrary, Fig C is the GWAS for TC and D is the eQTL of gene SDC1 for the same region. Visually, they seem to have similar signals and PPH4 is 0.82.
+          </aside>
         </section>
 
         <section class="content-slide">
@@ -382,6 +386,22 @@
           </aside>
         </section>
 
+        <section class="image-slide">
+          <div class="slide-shell compact">
+            <h3 class="content-title">An example of COLOC's Input Dataset</h3>
+            <div class="glass media-frame wide-media image-max-95">
+              <img
+                src="img/input.png"
+                alt="Illustration of COLOC input"
+                style="max-width: 95%; height: auto"
+              />
+            </div>
+          </div>
+          <aside class="notes">
+            Here is an example of COLOC's input dataset. It is a quantitative trait dataset, one bounded region, a common dense SNP set, and properly harmonized summary statistics.
+          </aside>
+        </section>
+
         <section class="content-slide">
           <div class="slide-shell compact">
             <h3 class="content-title">COLOC model</h3>
@@ -405,6 +425,15 @@
             \text{ABF} = \sqrt{1-r} \times \exp\left[\frac{Z^2}{2} \times r\right]
             $$ -->
           </div>
+          <aside class="notes">
+            Here is the COLOC model.
+            
+            PPH4 is the posterior probability of H4.
+            
+            PPH4 is calculated by the Bayes factor ratio of H4 to H0.
+            
+            The Bayes factor ratio is calculated by the ABF of each SNP.
+          </aside>
         </section>
 
         <section class="content-slide">
@@ -466,6 +495,15 @@
           $$
         </div>
         </div>
+        <aside class="notes">
+          Here is the calculation of PPH4.
+          
+          PPH4 is the posterior probability of H4.
+          
+          PPH4 is calculated by the Bayes factor ratio of H4 to H0.
+          
+          The Bayes factor ratio is calculated by the ABF of each SNP.
+        </aside>
         </section>
 
         <section class="content-slide">
